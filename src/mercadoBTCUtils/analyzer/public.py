@@ -19,10 +19,10 @@ class BasicAnalysis:
     Attributes
     ----------
     initialSummaryDate : Date
-        The initial start date to download and analyze data
+        The initial start date to download and analyze data. If not configured, it'll always be today - 90 days
 
     endSummaryDate : Date
-        The end start date (non inclusive) to download and analyze data
+        The end start date (non inclusive) to download and analyze data. If not configured, it'll always be today - 1 day
 
     summaryData : DataFrame
         The downloaded daily summary data, as a Pandas DataFrame
@@ -35,6 +35,10 @@ class BasicAnalysis:
     def summaryData(self):
         return self.__summaryData
 
+    def __init__(self):
+        self.initialSummaryDate = (dt.datetime.now() - dt.timedelta(days=90)).date()
+        self.endSummaryDate = (dt.datetime.now() - dt.timedelta(days=1)).date()
+
     def downloadSummaryData(self):
         """
         Downloads the data from the Mercado Bitcoin API Day Summary endpoint (api/BTC/day-summary).
@@ -46,12 +50,6 @@ class BasicAnalysis:
         causing the error.
         """
         log.info('Downloading daily summary data')
-        if self.initialSummaryDate is None:
-            log.warning('Initial date is \'None\', configuring it as last 90 days data.')
-            self.initialSummaryDate = (dt.datetime.now() - dt.timedelta(days=90)).date()
-        if self.endSummaryDate is None:
-            log.warning('End date is \'None\', configuring as yesterday.')
-            self.endSummaryDate = (dt.datetime.now() - dt.timedelta(days=1)).date()
         log.debug(f'Initial Date: {self.initialSummaryDate}')
         log.debug(f'End Date    : {self.endSummaryDate}')
         numDays = (self.endSummaryDate-self.initialSummaryDate).days
