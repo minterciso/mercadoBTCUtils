@@ -21,7 +21,7 @@ if ('Log' in config) is False:
     }
 
 # Initialize a default logger
-log = getLogger('default')
+log = getLogger(__name__)
 logLevel = INFO
 if config['Log']['Level'].upper() == 'DEBUG':
     logLevel = DEBUG
@@ -34,4 +34,4 @@ elif config['Log']['Level'].upper() == 'ERROR':
 elif config['Log']['Level'].upper() == 'CRITICAL':
     logLevel = CRITICAL
 
-basicConfig(filename=config['Log']['FileStream'], level=logLevel, format='[%(asctime)s %(levelname)s - %(module)s-%(filename)s (%(lineno)d] %(message)s')
+basicConfig(filename=config['Log']['FileStream'], level=logLevel, format='[%(asctime)s %(levelname)s - %(name)s-%(module)s %(filename)s-%(funcName)s (%(lineno)d)] %(message)s')
