@@ -15,6 +15,24 @@ This packed is intended to achieve 3 main things:
 
 ## Installation
 
+## Configuration
+To configure, you need to create a .ini file with the following parameters:
+
+    [MercadoBitcoin]
+    BaseUrl = https://www.mercadobitcoin.net
+    TapiID = None
+    TapiSecret = None
+    
+    [Log]
+    FileStream =  logs/mercadoBTC.log
+    Level = DEBUG
+
+And you can either:
+1. Create a system variable named MERCADOBTC_CFG_FILE with the path of the ini file, or
+2. Create the file named `mercadoBTC.ini` on your current directory you are calling this package
+
+If the configuration file does not exist, it'll assume the default values (the ones on the sample here)
+
 ## Basic Usage
 
 ## Machine Learning Analysis
