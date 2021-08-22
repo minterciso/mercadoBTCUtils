@@ -18,10 +18,10 @@ class BasicAnalysis:
 
     Attributes
     ----------
-    initialSummaryDate : Datetime
+    initialSummaryDate : Date
         The initial start date to download and analyze data
 
-    endSummaryDate : Datetime
+    endSummaryDate : Date
         The end start date (non inclusive) to download and analyze data
 
     summaryData : DataFrame
@@ -34,9 +34,6 @@ class BasicAnalysis:
     @property
     def summaryData(self):
         return self.__summaryData
-
-    def __init__(self):
-        pass
 
     def downloadSummaryData(self):
         """
