@@ -50,7 +50,7 @@ class BasicAnalysis:
 
     def __init__(self):
         self.initialSummaryDate = (dt.datetime.now() - dt.timedelta(days=90)).date()
-        self.endSummaryDate = (dt.datetime.now() - dt.timedelta(days=1)).date()
+        self.endSummaryDate = dt.datetime.now().date()
 
     def summaryToCSV(self, filePath: str):
         """
@@ -111,7 +111,7 @@ class BasicAnalysis:
         data = []
         log.info(f'Getting last {numDays+1} days of summary data...')
         numTries = 0
-        for i in range(numDays+1):
+        for i in range(numDays):
             queryDate = self.initialSummaryDate+dt.timedelta(days=i)
             try:
                 log.debug(f'{queryDate.strftime("%Y-%m-%d")}...')
@@ -268,5 +268,47 @@ class BasicAnalysis:
             plt.legend()
             plt.tight_layout()
             plt.close(pctDiffPlot)
-
         return predictedResults, df, comparisonPlot, pctDiffPlot
+
+    def predictSummary(self, numDays: int = 1, addStd: bool = False):
+        """
+        Use the trained summary model (based on the opening values) to predict the next numDays of average price.
+
+        Notes
+        -----
+        Since we train the model based on the opening value, and we don't (yet maybe?) have a way to predict this, we are using the
+        predicted average value as the starting point for the next day. That means that the precision will fall drastically for anything
+        greater than 1 day. We try to improve this by adding 10% of the standard deviation of the opening parameter on the average value,
+        but this is by far nothing mathematically proven to improve this. I'm actually doing this for kicks and wondering if this can improve
+        or not.
+
+        Parameters
+        ----------
+        numDays : int, default: 1
+                    The amount of days to predict. 1 day is pretty precise, anything more than 3-4 days can loose a lot of precision.
+
+        addStd : bool, default: False
+                    If this is set to True, it'll try to add 10% of the Standard Deviation of the opening value. This improves a little of
+                    the precision for up until 3-4 days. Anything more then this, we need a better module.
+
+        Returns
+        -------
+        A DataFrame with the predicted values
+        """
+        log.info(f'Trying to predict for {numDays} days from the last downloaded day.')
+        if numDays > 1:
+            log.warning('Using anything greater then 1 extra day can lead to very wrong predicted values.')
+        lastKnownValues = self.summaryData[['date', 'opening']].iloc[-1]
+        df = pd.DataFrame({'date': [lastKnownValues['date']], 'Average Price': [lastKnownValues['opening']]})
+        startDate = dt.datetime.strptime(lastKnownValues['date'], '%Y-%m-%d').date()
+        openingStd = self.summaryData.describe()['closing']['std']
+        for i in range(1, numDays):
+            predictDate = startDate + dt.timedelta(days=i)
+            log.debug(f'Predicting for {predictDate.strftime("%Y-%m-%d")}...')
+            avgPrice = df.iloc[-1]['Average Price']
+            predictAvgPrice = self.__summaryLRM.predict(pd.DataFrame([avgPrice]))[0]
+            if i > 0 and addStd:
+                predictAvgPrice += (openingStd*0.1)
+            df = df.append({'date': predictDate, 'Average Price': predictAvgPrice}, ignore_index=True).reset_index(drop=True)
+        log.info('Done')
+        return df
