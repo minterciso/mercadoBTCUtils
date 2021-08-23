@@ -1,9 +1,12 @@
+import pandas as pd
 import requests.exceptions
 from requests import get
-from pandas import DataFrame
+from pandas import DataFrame, to_datetime
 from numpy import sqrt
 from os import path
 import datetime as dt
+import seaborn as sns
+
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, mean_absolute_error
@@ -82,6 +85,10 @@ class BasicAnalysis:
         This method uses a synchronized way of downloading the actual data, so it may take some time to complete. If there's
         a known error, it'll try for 3 times (and log the errors as they appear), on the 4th error it'll raise the Exception
         causing the error.
+        If the data was already downloaded or read using the readSummaryCSVData() method, it'll append the data on the existing
+        summary.
+
+        Todo: Add a parameter to control the append procedure
         """
         log.info('Downloading daily summary data')
         log.debug(f'Initial Date: {self.initialSummaryDate}')
@@ -111,5 +118,63 @@ class BasicAnalysis:
                     log.error('Too many Connection Errors, aborting.')
                     raise
         log.debug('Download complete, creating DataFrame...')
-        self.__summaryData = DataFrame(data)
+        df = DataFrame(data)
+        log.debug('Calculating dates timestamp')
+        df['tstamp'] = to_datetime(df['date'], format='%Y-%m-%d').apply(lambda x: x.timestamp())
+        if self.__summaryData is not None:
+            self.__summaryData = pd.concat([self.__summaryData, df]).reset_index(drop=True)
+        else:
+            self.__summaryData = df.copy(deep=True)
         log.info('Done')
+
+    def readSummaryCSVData(self, filePath: str):
+        """
+        Instead of downloading the data, you can read the data from a CSV file, that was created before with the method summaryToCSV().
+
+        Parameters
+        ----------
+        filePath : str
+                   Where the file is located
+        """
+        log.info('Reading a CSV file as a Daily Summary data')
+        normalizedFilePath = path.normpath(filePath)
+        log.debug(f'File: {normalizedFilePath}')
+        self.__summaryData = pd.read_csv(normalizedFilePath)
+        log.info('Done')
+
+    def getBasicSummaryAnalysisPlots(self, calculatePairPlot: bool = False):
+        """
+        Create some basic analysis plots (average price, average volume, pair plot) and a described DataFrame from the summary data
+
+        Parameters
+        ----------
+        calculatePairPlot : bool
+                            If set to True, calculate the pair plot of the full summary dataset
+
+        Returns
+        -------
+        A tuple with (average price plot figure, average volume plot figure, pair plot figure, describe DataFrame)
+        """
+        log.info('Creating some standard analysis plot, and DataFrame.')
+        log.debug('Average Price')
+        avgPriceLmPlot = sns.lmplot(data=self.__summaryData.reset_index(), x='index', y='avg_price', height=5, aspect=2)
+        avgPriceLmPlot.set_xlabels('Measure')
+        avgPriceLmPlot.set_ylabels('Average Price R$')
+        avgPriceLmPlot.set(title='Average Price X Measure')
+        avgPriceLmPlot.tight_layout()
+        log.debug('Average Volume')
+        avgVolumeLmPlot = sns.lmplot(data=self.__summaryData.reset_index(), x='index', y='volume', height=5, aspect=2)
+        avgVolumeLmPlot.set_xlabels('Measure')
+        avgVolumeLmPlot.set_ylabels('Average Price R$')
+        avgVolumeLmPlot.set(title='Average Volume X Measure')
+        avgVolumeLmPlot.tight_layout()
+        pairPlot = None
+        if calculatePairPlot:
+            log.debug('Pair Plot')
+            pairPlot = sns.pairplot(self.__summaryData)
+            pairPlot.fig.suptitle('Summary Pair Plot', y=1)
+            pairPlot.tight_layout()
+        log.debug('Described DataFrame')
+        describedSummaryData = self.__summaryData.describe()
+        log.info('Done')
+        return avgPriceLmPlot.fig, avgVolumeLmPlot.fig, pairPlot.fig if pairPlot is not None else None, describedSummaryData
