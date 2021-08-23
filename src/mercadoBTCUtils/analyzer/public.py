@@ -6,6 +6,7 @@ from numpy import sqrt
 from os import path
 import datetime as dt
 import seaborn as sns
+import matplotlib.pyplot as plt
 
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
@@ -30,14 +31,22 @@ class BasicAnalysis:
 
     summaryData : DataFrame
                   The downloaded daily summary data, as a Pandas DataFrame
+
+    summaryModel : sklearn summary model
+                  The trained summary model
     """
     initialSummaryDate = None
     endSummaryDate = None
     __summaryData = None
+    __summaryLRM = None
 
     @property
     def summaryData(self):
         return self.__summaryData
+
+    @property
+    def summaryModel(self):
+        return self.__summaryLRM
 
     def __init__(self):
         self.initialSummaryDate = (dt.datetime.now() - dt.timedelta(days=90)).date()
@@ -185,3 +194,79 @@ class BasicAnalysis:
         describedSummaryData = self.__summaryData.describe()
         log.info('Done')
         return avgPriceLmPlot.fig, avgVolumeLmPlot.fig, pairPlot.fig if pairPlot is not None else None, describedSummaryData
+
+    def trainSummary(self, testSize: float = 0.3, resultComparison: bool = False):
+        """
+        This method parses the read summary data and create a simple Linear Regression model to predict the average daily values.
+
+        Parameters
+        ----------
+        testSize : float, default: 0.3
+                   The % to keep from the data for testing the ML model
+
+        resultComparison : bool, default: False
+                   If this is set to True, then it'll create both a Comparison DataFrame, as well as 2 comparison graphs (one with realXpredicted value, another with %difference from real value)
+
+        Returns
+        -------
+        A tuple with:
+            model results: A dictionary with mae, mse, rmse, score and coefficient dataframe
+            comparison dataframe: A DataFrame with the real and predicted values
+            comparison plot: A plot with the real and predicted values
+            difference plot: A plot with the % difference from the real values
+        """
+        log.info('Training a Linear Regression module to try to predict the average price, on a daily basis.')
+        log.debug('Cleaning data...')
+        X = self.__summaryData.drop(['date', 'avg_price', 'closing', 'lowest', 'highest', 'volume', 'amount', 'quantity', 'tstamp'], axis=1)
+        y = self.__summaryData['avg_price']
+        log.debug(f'Splitting with {testSize*100}% as a test base amount')
+        XTrain, XTest, yTrain, yTest = train_test_split(X, y, test_size=testSize)
+        log.debug('Creating Linear Regression model and fitting it...')
+        self.__summaryLRM = LinearRegression()
+        self.__summaryLRM.fit(XTrain, yTrain)
+        log.debug('Testing against our test data')
+        predictedTests = self.__summaryLRM.predict(XTest)
+        predictedResults = {
+            'mae': mean_absolute_error(yTest, predictedTests),
+            'mse': mean_squared_error(yTest, predictedTests),
+            'rmse': sqrt(mean_squared_error(yTest, predictedTests)),
+            'score': self.__summaryLRM.score(XTest, yTest),
+            'coeff': pd.DataFrame(self.__summaryLRM.coef_, X.columns, columns=['Coeff'])
+        }
+        log.info('Test results:')
+        log.info(f'MAE:  {predictedResults["mae"]}')
+        log.info(f'MSE:  {predictedResults["mse"]}')
+        log.info(f'RMSE:  {predictedResults["rmse"]}')
+        log.info(f'Score:  {predictedResults["score"]}')
+        log.info(f'Coefficient DataFrame:\n{predictedResults["coeff"]}')
+        df = None
+        comparisonPlot = None
+        pctDiffPlot = None
+        if resultComparison:
+            log.debug('Result comparison is set to true, creating a result comparison graph...')
+            df = XTest.copy()
+            df['real'] = yTest
+            df['predicted'] = predictedTests
+            df['diff'] = df['real'] - df['predicted']
+            df['pctChange'] = df[['real', 'predicted']].pct_change(axis='columns')['predicted']
+            comparisonPlot, ax = plt.subplots()
+            ax.scatter(df.index, df['real'], label='real')
+            ax.scatter(df.index, df['predicted'], label='predicted')
+            plt.xlabel('Measure')
+            plt.ylabel('Price R$')
+            plt.title('Predicted Vs Real values')
+            plt.legend()
+            plt.tight_layout()
+            plt.close(comparisonPlot)
+            pctDiffPlot, ax = plt.subplots()
+            ax.plot(df.sort_index().index, df.sort_index()['pctChange'], label='% Difference', marker='o')
+            plt.grid()
+            plt.xlabel('Measure')
+            plt.ylabel('% Change')
+            plt.ylim(-1.0, 1.0)
+            plt.title('Difference % between real and predicted')
+            plt.legend()
+            plt.tight_layout()
+            plt.close(pctDiffPlot)
+
+        return predictedResults, df, comparisonPlot, pctDiffPlot
