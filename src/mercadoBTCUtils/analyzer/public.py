@@ -76,9 +76,15 @@ class BasicAnalysis:
         self.__summaryData.to_csv(path_or_buf=normalizedFilePath, index=False)
         log.info('Done')
 
-    def downloadSummaryData(self):
+    def downloadSummaryData(self, concatenate: bool = False):
         """
         Downloads the data from the Mercado Bitcoin API Day Summary endpoint (api/BTC/day-summary).
+
+        Parameters
+        ----------
+        concatenate : bool, default: False
+                      If this is set to True, then we'll concatenate the downloaded data with whatever was already downloaded/read.
+                      The default if False, then it'll override with whatever already exists there
 
         Notes
         -----
@@ -87,8 +93,6 @@ class BasicAnalysis:
         causing the error.
         If the data was already downloaded or read using the readSummaryCSVData() method, it'll append the data on the existing
         summary.
-
-        Todo: Add a parameter to control the append procedure
         """
         log.info('Downloading daily summary data')
         log.debug(f'Initial Date: {self.initialSummaryDate}')
@@ -121,10 +125,13 @@ class BasicAnalysis:
         df = DataFrame(data)
         log.debug('Calculating dates timestamp')
         df['tstamp'] = to_datetime(df['date'], format='%Y-%m-%d').apply(lambda x: x.timestamp())
-        if self.__summaryData is not None:
-            self.__summaryData = pd.concat([self.__summaryData, df]).reset_index(drop=True)
+        if concatenate is False:
+            self.__summaryData = df.copy(True)
         else:
-            self.__summaryData = df.copy(deep=True)
+            if self.__summaryData is not None:
+                self.__summaryData = pd.concat([self.__summaryData, df]).reset_index(drop=True)
+            else:
+                self.__summaryData = df.copy(deep=True)
         log.info('Done')
 
     def readSummaryCSVData(self, filePath: str):
