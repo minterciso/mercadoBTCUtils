@@ -2,6 +2,7 @@ import requests.exceptions
 from requests import get
 from pandas import DataFrame
 from numpy import sqrt
+from os import path
 import datetime as dt
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
@@ -19,13 +20,13 @@ class BasicAnalysis:
     Attributes
     ----------
     initialSummaryDate : Date
-        The initial start date to download and analyze data. If not configured, it'll always be today - 90 days
+                         The initial start date to download and analyze data. If not configured, it'll always be today - 90 days
 
     endSummaryDate : Date
-        The end start date (non inclusive) to download and analyze data. If not configured, it'll always be today - 1 day
+                     The end start date (non inclusive) to download and analyze data. If not configured, it'll always be today - 1 day
 
     summaryData : DataFrame
-        The downloaded daily summary data, as a Pandas DataFrame
+                  The downloaded daily summary data, as a Pandas DataFrame
     """
     initialSummaryDate = None
     endSummaryDate = None
@@ -38,6 +39,39 @@ class BasicAnalysis:
     def __init__(self):
         self.initialSummaryDate = (dt.datetime.now() - dt.timedelta(days=90)).date()
         self.endSummaryDate = (dt.datetime.now() - dt.timedelta(days=1)).date()
+
+    def summaryToCSV(self, filePath: str):
+        """
+        Save the full summary data to the file pointed by filePath. If the file does not ends in .csv, this method will add it. If the summary is empty, it won't save the file and the method will return False.
+        Any other error it'll raise the error
+
+        Parameters
+        ----------
+        filePath : str
+                   The file path location to save the summary data.
+
+        Returns
+        -------
+        bool
+             If there is something on the summary data, and the file is save successfully, it'll return True. If the summary data is empty or None, it'll return False. Any other error it'll raise the proper Exception.
+
+        Notes
+        -----
+        The directory of the passed filePath should at least exists. This method does not create the directories.
+        """
+        log.info('Saving the summary data to a CSV file.')
+        normalizedFilePath = path.normpath(filePath)
+        if ('csv' in normalizedFilePath.lower().split('.')[-1]) is False:
+            normalizedFilePath += '.csv'
+        log.debug(f'File Path: {normalizedFilePath}')
+        if self.summaryData is None:
+            log.warning('Summary is None, maybe it wasn\'t run yet?')
+            return False
+        if len(self.summaryData) == 0:
+            log.warning('No summary found.')
+            return False
+        self.__summaryData.to_csv(path_or_buf=normalizedFilePath, index=False)
+        log.info('Done')
 
     def downloadSummaryData(self):
         """
@@ -55,7 +89,7 @@ class BasicAnalysis:
         numDays = (self.endSummaryDate-self.initialSummaryDate).days
         baseUrl = f'{config["MercadoBitcoin"]["BaseUrl"]}/api/BTC/day-summary/'
         data = []
-        log.info(f'Getting last {numDays+1} summary data...')
+        log.info(f'Getting last {numDays+1} days of summary data...')
         numTries = 0
         for i in range(numDays+1):
             queryDate = self.initialSummaryDate+dt.timedelta(days=i)
