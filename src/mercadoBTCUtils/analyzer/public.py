@@ -24,16 +24,19 @@ class BasicAnalysis:
     Attributes
     ----------
     initialSummaryDate : Date
-                         The initial start date to download and analyze data. If not configured, it'll always be today - 90 days
+                The initial start date to download and analyze data. If not configured, it'll always be today - 90 days
 
     endSummaryDate : Date
-                     The end start date (non inclusive) to download and analyze data. If not configured, it'll always be today - 1 day
+                The end start date (non inclusive) to download and analyze data. If not configured, it'll always be today - 1 day
 
     summaryData : DataFrame
-                  The downloaded daily summary data, as a Pandas DataFrame
+                The downloaded daily summary data, as a Pandas DataFrame
 
     summaryModel : sklearn summary model
-                  The trained summary model
+                The trained summary model
+
+    summaryDirection : bool
+                If the average price is rising, this will return True, otherwise it'll return False
     """
     initialSummaryDate = None
     endSummaryDate = None
@@ -47,6 +50,10 @@ class BasicAnalysis:
     @property
     def summaryModel(self):
         return self.__summaryLRM
+
+    @property
+    def summaryDirection(self):
+        return True if self.__summaryData['avg_price'].iloc[-3:].diff().mean() > 0 else False
 
     def __init__(self):
         self.initialSummaryDate = (dt.datetime.now() - dt.timedelta(days=90)).date()
@@ -270,7 +277,7 @@ class BasicAnalysis:
             plt.close(pctDiffPlot)
         return predictedResults, df, comparisonPlot, pctDiffPlot
 
-    def predictSummary(self, numDays: int = 1, addStd: bool = False):
+    def predictSummary(self, numDays: int = 1, useStd: bool = False, pctStdUsage: float = 0.1):
         """
         Use the trained summary model (based on the opening values) to predict the next numDays of average price.
 
@@ -287,9 +294,12 @@ class BasicAnalysis:
         numDays : int, default: 1
                     The amount of days to predict. 1 day is pretty precise, anything more than 3-4 days can loose a lot of precision.
 
-        addStd : bool, default: False
-                    If this is set to True, it'll try to add 10% of the Standard Deviation of the opening value. This improves a little of
-                    the precision for up until 3-4 days. Anything more then this, we need a better module.
+        useStd : bool, default: False
+                    If this is set to True, it'll try to add (or remove) 10% of the Standard Deviation of the opening value. This improves a little of
+                    the precision for up until 3-4 days. Anything more then this, we need a better module. The decision to add or remove is based on the
+                    direction of the last 2 average summary measures
+        pctStdUsage : float, default: 0.1
+                    The % of the STD to use when useStd is set to True.
 
         Returns
         -------
@@ -307,8 +317,11 @@ class BasicAnalysis:
             log.debug(f'Predicting for {predictDate.strftime("%Y-%m-%d")}...')
             avgPrice = df.iloc[-1]['Average Price']
             predictAvgPrice = self.__summaryLRM.predict(pd.DataFrame([avgPrice]))[0]
-            if i > 0 and addStd:
-                predictAvgPrice += (openingStd*0.1)
+            if i > 0 and useStd:
+                if self.summaryDirection:
+                    predictAvgPrice += (openingStd * pctStdUsage)
+                else:
+                    predictAvgPrice -= (openingStd * pctStdUsage)
             df = df.append({'date': predictDate, 'Average Price': predictAvgPrice}, ignore_index=True).reset_index(drop=True)
         log.info('Done')
         return df

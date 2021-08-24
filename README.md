@@ -193,11 +193,12 @@ problem arises when you try to predict more than 1 day, since you don't have the
 
 One way to (kinda?) circumvent this, is to use the average predicted price as the opening balance. This can be a little 
 reliable, but since usually the average price is almost always lower than the opening value, this can lead to a misinformation
-that the average price is lowering, when it should actually be increasing, for this, I've added a control parameter named `addStd`.
+that the average price is lowering, when it should actually be increasing, for this, I've added a control parameter named `useStd`.
 Please note that I currently **do not** have the statistical knowledge to vouch for this, but what I thought of was to add
-a % of the Standard Deviation on the predicted average price as an input for the next prediction. This is the place that 
-there's more room for improvement, and that will change very soon. For now, it is showing good empirical results with 
-the price fluctuations of 2021/08.
+or remove a % of the Standard Deviation on the predicted average price as an input for the next prediction. The decision
+to add or remove is taken based on the mean average price of the difference of the last 3 known real measures. This is 
+the place that there's more room for improvement, and that will change very soon. For now, it is showing good empirical 
+results with the price fluctuations of 2021/08.
 
     pdf = ba.predictSummary(7, addStd=True)
     print(pdf)
@@ -210,4 +211,5 @@ the price fluctuations of 2021/08.
     5  2021-08-27  271432.503166
     6  2021-08-28  272905.641983
 
-Even so, I wouldn't use this for predicting more than 2-3 days.
+Even so, I wouldn't use this for predicting more than 2-3 days. You can also control the % amount usage of the std with
+the `pctStdUsage` parameter.
