@@ -54,21 +54,21 @@ The first thing you need to do, is to download a daily summary data. To this you
 2. Use the default, that's always the last 80 days
 
 
-    from mercadoBTCUtils.analyzer.public import BasicAnalysis
+    from mercadobtc_utils.analyzer.public import BasicAnalysis
     import datetime as dt
 
     ba = BasicAnalysis()
-    ba.initialSummaryDate = dt.date(year=2021, month=1, day=1)
-    ba.endSummaryDate = dt.date(year=2021, month=7, day=1)
-    ba.downloadSummaryData()
+    ba.initial_summary_date = dt.date(year=2021, month=1, day=1)
+    ba.end_summary_date = dt.date(year=2021, month=7, day=1)
+    ba.download_summary_data()
 
 If you want to use the last 90 days:
 
-    from mercadoBTCUtils.analyzer.public import BasicAnalysis
+    from mercadobtc_utils.analyzer.public import BasicAnalysis
     import datetime as dt
 
     ba = BasicAnalysis()
-    ba.downloadSummaryData()
+    ba.download_summary_data()
 
 Once this is complete, you can see the data in a DataFrame:
 
@@ -77,7 +77,7 @@ Once this is complete, you can see the data in a DataFrame:
     pd.set_option('max_colwidth', None)
     pd.set_option('max_rows', None)
     pd.set_option('expand_frame_repr', False)
-    print(ba.summaryData.head())
+    print(ba.summary_data.head())
              date       opening       closing        lowest   highest        volume    quantity  amount      avg_price        tstamp
     0  2021-01-01  152700.00002  153458.30000  151539.00000  153975.0  1.258338e+07   82.272658    4824  152947.343461  1.609459e+09
     1  2021-01-02  153458.30000  172189.98445  153457.40000  174174.0  7.128332e+07  428.284413   28668  166439.218558  1.609546e+09
@@ -87,19 +87,19 @@ Once this is complete, you can see the data in a DataFrame:
 
 You can also save the summary to a CSV file:
     
-    ba.summaryToCSV('big_sample_2021.csv')
+    ba.summary_to_csv('big_sample_2021.csv')
 
 And you can load it from a previously saved file:
 
-    ba.readSummaryCSVData('big_sample_2021.csv')
+    ba.read_summary_csv_data('big_sample_2021.csv')
 
-Now, one thing to be aware of, the `downloadSummaryData()` method has an optional parameter named `concatenate`. If this
+Now, one thing to be aware of, the `download_summary_data()` method has an optional parameter named `concatenate`. If this
 is `True`, then it'll concatenate with the value already loaded. Let's say for instance that you:
 1. Downloaded the data from 2021-07-01 till 2021-08-01 (always not inclusive)
 2. Saved it as 202107.csv
-3. Then you can load it with `readSummaryCSVData('202107.csv')`
+3. Then you can load it with `read_summary_csv_data('202107.csv')`
 4. Configure to download only 2021-08-01 till 2021-09-01
-5. Download and concatenate with already existing data `downloadSummaryData(concatenate=True)`
+5. Download and concatenate with already existing data `download_summary_data(concatenate=True)`
 
 Now, you would have both months 07 and 08 to train, already cleaned up. Neat!
 
@@ -107,14 +107,14 @@ Now, you would have both months 07 and 08 to train, already cleaned up. Neat!
 
 Once you have the cleaned public summary data, you can make some standard visual analysis:
 
-    from mercadoBTCUtils.analyzer.public import BasicAnalysis
-    price, volume, pair, df = ba.getBasicSummaryAnalysisPlots(calculatePairPlot=True)
+    from mercadobtc_utils.analyzer.public import BasicAnalysis
+    price, volume, pair, df = ba.get_basic_summary_analysis_plots(calculatePairPlot=True)
 
 This will return a DataFrame (df) with the summary Pandas DataFrame `describe()` method, and some Seaborn lmplot graphs of:
 * Average price over time
 * Average volume over time
 
-If you pass `True` on the `calculatePairPlot` parameter, it'll also create a Seaborn pair plot.
+If you pass `True` on the `calculate_pair_plot` parameter, it'll also create a Seaborn pair plot.
 
 Sample plots:
 ![Average Price](images/avgPrice.png)
@@ -137,11 +137,11 @@ And the DataFrame:
 ### Train and predict
 Now that you downloaded the data, and created some plots, let's train and predict something:
 
-    from mercadoBTCUtils.analyzer.public import BasicAnalysis
+    from mercadobtc_utils.analyzer.public import BasicAnalysis
     ba = BasicAnalysis()
-    ba.readSummaryCSVData('full_to_date.csv')
-    results, df, predictedPlot, diffPlot = ba.trainSummary(resultComparison=True)
-    pdf = ba.predictSummary(7)
+    ba.read_summary_csv_data('full_to_date.csv')
+    results, predicted_df, predicted_plot, diff_plot = ba.train_summary(resultComparison=True)
+    pdf = ba.predict_summary(7)
     print(pdf)
          date  Average Price
     0  2021-08-22  263839.504160
@@ -153,12 +153,12 @@ Now that you downloaded the data, and created some plots, let's train and predic
     6  2021-08-28  264532.862132
 
 Ok, so what's going on here? We are basically:
-1. Reading a previously save summary data: `ba.readSummaryCSVData('full_to_date.csv')`
-2. Training and getting some results: `results, predictedDf, predictedPlot, diffPlot = ba.trainSummary(resultComparison=True)`
-3. Predicting for 7 days: `pdf = ba.predictSummary(7)`
+1. Reading a previously save summary data: `ba.read_summary_csv_data('full_to_date.csv')`
+2. Training and getting some results: `results, predicted_df, predicted_plot, diff_plot = ba.trainSummary(result_comparison=True)`
+3. Predicting for 7 days: `pdf = ba.predict_summary(7)`
 
-Regarding the train module, it will **always** output the result dictionary, but the `predictedDf`, `predictedPlot` 
-and `diffPlot` will only be created if `resultComparison` is True. There's another option you can pass, `testSize` that
+Regarding the train module, it will **always** output the result dictionary, but the `predicted_df`, `predicted_plot` 
+and `diff_plot` will only be created if `result_comparison` is True. There's another option you can pass, `test_size` that
 stated the % of random data that will be used to create the prediction result, the default is 30%.
 
 The `results` is a dictionary with:
@@ -173,9 +173,9 @@ The plots are to show, in a visual way, the difference between the real value an
 ![Predicted Vs Real](images/predicted.png)
 ![Predicted %](images/predictedDiff.png)
 
-The `predictedDf` itself is a simple DataFrame with the predicted Vs Real values:
+The `predicted_df` itself is a simple DataFrame with the predicted Vs Real values:
 
-    print(predictedDf.head())
+    print(predicted_df.head())
          opening           real      predicted          diff  pctChange
     28  167597.93803  158382.496611  168683.308725 -10300.812113   0.065038
     70  202999.99473  200178.253094  203729.704704  -3551.451610   0.017741
@@ -200,7 +200,7 @@ to add or remove is taken based on the mean average price of the difference of t
 the place that there's more room for improvement, and that will change very soon. For now, it is showing good empirical 
 results with the price fluctuations of 2021/08.
 
-    pdf = ba.predictSummary(7, addStd=True)
+    pdf = ba.predict_summary(7, add_std=True)
     print(pdf)
              date  Average Price
     0  2021-08-22  263839.504160
@@ -212,4 +212,4 @@ results with the price fluctuations of 2021/08.
     6  2021-08-28  272905.641983
 
 Even so, I wouldn't use this for predicting more than 2-3 days. You can also control the % amount usage of the std with
-the `pctStdUsage` parameter.
+the `pct_std_usage` parameter.

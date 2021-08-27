@@ -2,8 +2,8 @@ from urllib.parse import urlencode
 from hashlib import sha512
 from hmac import new
 
-from mercadoBTCUtils import config
-from mercadoBTCUtils.trading import log
+from mercadobtc_utils import config
+from mercadobtc_utils.trading import log
 
 
 class Operations:
