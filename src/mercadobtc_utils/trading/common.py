@@ -169,3 +169,32 @@ class Operations:
         response_data = self.__execute_tapi(params=params)
         log.info('Done')
         return response_data
+
+    def get_order(self, coin_pair: str, order_id: int):
+        """
+        Query the TAPI and return the order information composed by the pair coin_pair and order_id.
+
+        Parameters
+        ----------
+        coin_pair: str
+            The coin pair to find the order information, valid values can be found in https://www.mercadobitcoin.com.br/trade-api/#get_order
+
+        order_id: int
+            The order unique identifier for the specific coin.
+
+        Returns
+        -------
+
+        """
+        log.info('Requesting information on a specific order')
+        log.debug(f'- coin : {coin_pair}')
+        log.debug(f'- order: {order_id}')
+        params = {
+            'tapi_method': 'get_order',
+            'tapi_nonce': self.tapi_nonce,
+            'coin_pair': coin_pair,
+            'order_id': order_id
+        }
+        response_data = self.__execute_tapi(params=params)
+        log.info('Done')
+        return response_data
