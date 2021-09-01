@@ -227,13 +227,16 @@ class Operations:
         log.info('Done')
         return response_data
 
-    def place_buy_order(self, coin_pair: str, quantity: float, limit_price: float, wait: bool = True):
+    def place_buy_sell_order(self, buy: bool, coin_pair: str, quantity: float, limit_price: float, wait: bool = True):
         """
         Create an buy order on the order book, with passed parameters.
 
         Parameters
         ----------
-        coin_pair, str:
+        buy: bool
+            If set to True, we want to buy some coin, if set to False we want to sell.
+
+        coin_pair: str
             The coin to buy.
 
         quantity: float
@@ -250,12 +253,14 @@ class Operations:
         A dictionary with the placed order parameter, as shown in https://www.mercadobitcoin.com.br/trade-api/#place_buy_order.
         """
         log.info('Placing a \'buy\' order.')
+        log.debug(f'- Type : {"buy" if buy else "sell"}')
         log.debug(f'- Coin : {coin_pair}')
         log.debug(f'- Qtd  : {quantity}')
         log.debug(f'- Price: R$ {limit_price}')
         log.debug(f'- Wait : {wait}')
+        method = 'place_buy_order' if buy else 'place_sell_order'
         params = {
-            'tapi_method': 'place_buy_order',
+            'tapi_method': method,
             'tapi_nonce': self.tapi_nonce,
             'coin_pair': coin_pair,
             'quantity': quantity,

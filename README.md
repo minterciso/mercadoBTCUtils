@@ -34,6 +34,78 @@ And you can either:
 If the configuration file does not exist, it'll assume the default values (the ones on the sample here)
 
 ## Basic Usage
+The basic usage is basically the same thing of the Mercado Bitcoin TAPI operations, as depicted [here](https://www.mercadobitcoin.com.br/trade-api/). 
+There are some caveats tough:
+1. Instead of created a `place_buy_order` and `place_sell_order`, I've created a `place_buy_sell_order`, that received an extra parameter `buy` that if set to True, it'll try to buy some coin, if set to False it'll try to sell some coin.
+2. The decimal precision is unspecified on the documentation, and upon trying to place some order you can receive the error `Unable to execute TAPI: Valor de *quantity* deve representar um decimal.`, this basically means to dial down the precision.
+
+Here's a complete example that will:
+1. Get your current balance
+2. Get the last open orders
+3. Place an order to buy your **total** balance in bitcoins
+
+
+    from mercadobtc_utils.trading.common import Operations
+    from pprint import pprint
+    import time
+    import pandas as pd
+
+    op = Operations()
+    account_info = op.get_account_info(assets=['brl', 'btc'])
+    time.sleep(1)
+    order_book = op.list_order_book('BRLBTC')
+    balance = account_info['brl']['available']
+    bids_df = pd.DataFrame(order_book['orderbook']['bids'])
+    bids_df = bids_df.astype({'quantity': float, 'limit_price': float})
+    mean_limit_price = bids_df.describe()['limit_price']['mean']
+    min_limit_price = bids_df.describe()['limit_price']['min']
+    coin_amount = float(balance)/mean_limit_price
+    
+    str_limit_price = str(min_limit_price).split('.')
+    bid_limit_price = float(str_limit_price[0] + '.' + str_limit_price[1][0:3])
+    str_coin_amount = str(coin_amount).split('.')
+    bid_coin_amount = float(str_coin_amount[0] + '.' + str_coin_amount[1][0:8])
+    print('Will place an order of:')
+    print(f'- Price : {bid_limit_price}')
+    print(f'- Amount: {bid_coin_amount}')
+    time.sleep(1)
+    data = op.place_buy_sell_order(buy=True, coin_pair='BRLBTC', quantity=bid_coin_amount, limit_price=bid_limit_price, wait=True)
+    pprint(data)
+
+The output can be something like this (with the real order id redacted): 
+
+    Will place an order of:
+    - Price : 242903.157
+    - Amount: 0.00043022
+    {'order': {'coin_pair': 'BRLBTC',
+             'created_timestamp': '1630463186',
+             'executed_price_avg': '0.00000',
+             'executed_quantity': '0.00000000',
+             'fee': '0.00000000',
+             'has_fills': False,
+             'limit_price': '242903.15700',
+             'operations': [],
+             'order_id': xxxxxxxxx,
+             'order_type': 1,
+             'quantity': '0.00043022',
+             'status': 1,
+             'updated_timestamp': '1630463186'}}
+
+If you check again on your balance, you'll see an open order:
+
+    from mercadobtc_utils.trading.common import Operations
+    from pprint import pprint
+    
+    op = Operations()
+    data = op.get_account_info(assets=['brl', 'btc'])
+    pprint(data)
+
+Output:
+
+    {'brl': {'available': '0.24128', 'total': '104.74307'},
+     'btc': {'amount_open_orders': 1,
+             'available': '0.00000000',
+             'total': '0.00000000'}}
 
 ## Machine Learning Analysis
 One of the nicest features of this tool is to try to predict some information based on both public information and
