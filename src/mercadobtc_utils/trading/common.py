@@ -226,3 +226,42 @@ class Operations:
         response_data = self.__execute_tapi(params=params)
         log.info('Done')
         return response_data
+
+    def place_buy_order(self, coin_pair: str, quantity: float, limit_price: float, wait: bool = True):
+        """
+        Create an buy order on the order book, with passed parameters.
+
+        Parameters
+        ----------
+        coin_pair, str:
+            The coin to buy.
+
+        quantity: float
+            The amount of the coin to buy.
+
+        limit_price: float
+            The value of the coin you want to buy from.
+
+        wait: bool, default: True
+            If set to True, wait for the order to be placed on the order book and return after this. Otherwise return asap.
+
+        Returns
+        -------
+        A dictionary with the placed order parameter, as shown in https://www.mercadobitcoin.com.br/trade-api/#place_buy_order.
+        """
+        log.info('Placing a \'buy\' order.')
+        log.debug(f'- Coin : {coin_pair}')
+        log.debug(f'- Qtd  : {quantity}')
+        log.debug(f'- Price: R$ {limit_price}')
+        log.debug(f'- Wait : {wait}')
+        params = {
+            'tapi_method': 'place_buy_order',
+            'tapi_nonce': self.tapi_nonce,
+            'coin_pair': coin_pair,
+            'quantity': quantity,
+            'limit_price': limit_price,
+            'async': 'true' if wait else 'false'
+        }
+        response_data = self.__execute_tapi(params=params)
+        log.info('Done')
+        return response_data
