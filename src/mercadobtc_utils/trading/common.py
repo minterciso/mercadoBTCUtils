@@ -184,7 +184,7 @@ class Operations:
 
         Returns
         -------
-
+        The information of the order, if found.
         """
         log.info('Requesting information on a specific order')
         log.debug(f'- coin : {coin_pair}')
@@ -194,6 +194,34 @@ class Operations:
             'tapi_nonce': self.tapi_nonce,
             'coin_pair': coin_pair,
             'order_id': order_id
+        }
+        response_data = self.__execute_tapi(params=params)
+        log.info('Done')
+        return response_data
+
+    def list_order_book(self, coin_pair: str, full: bool = False):
+        """
+        Returns (open) information from the order book regarding the specific coin pair.
+
+        Parameters
+        ----------
+        coin_pair: str
+            The coin to get the order book from
+
+        full: bool, default: False
+            If set to True, it'll return the last 500 orders for that coin, if set to False it'll return the last 20
+
+        Returns
+        -------
+        The last order book orders for the specific coins. You can find better information in https://www.mercadobitcoin.com.br/trade-api/#list_orderbook.
+        """
+        log.info('Getting detailed information regarding the last orders')
+        log.debug(f'- Coin: {coin_pair}')
+        log.debug(f'- Full: {full}')
+        params = {
+            'tapi_method': 'list_orderbook',
+            'tapi_nonce': self.tapi_nonce,
+            'coin_pair': coin_pair
         }
         response_data = self.__execute_tapi(params=params)
         log.info('Done')
