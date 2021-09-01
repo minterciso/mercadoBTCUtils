@@ -58,32 +58,32 @@ Here's a complete example that will:
 3. Place an order to buy your **total** balance in bitcoins
 
 
-    from mercadobtc_utils.trading.common import Operations
-    from pprint import pprint
-    import time
-    import pandas as pd
+        from mercadobtc_utils.trading.common import Operations
+        from pprint import pprint
+        import time
+        import pandas as pd
 
-    op = Operations()
-    account_info = op.get_account_info(assets=['brl', 'btc'])
-    time.sleep(1)
-    order_book = op.list_order_book('BRLBTC')
-    balance = account_info['brl']['available']
-    bids_df = pd.DataFrame(order_book['orderbook']['bids'])
-    bids_df = bids_df.astype({'quantity': float, 'limit_price': float})
-    mean_limit_price = bids_df.describe()['limit_price']['mean']
-    min_limit_price = bids_df.describe()['limit_price']['min']
-    coin_amount = float(balance)/mean_limit_price
-    
-    str_limit_price = str(min_limit_price).split('.')
-    bid_limit_price = float(str_limit_price[0] + '.' + str_limit_price[1][0:3])
-    str_coin_amount = str(coin_amount).split('.')
-    bid_coin_amount = float(str_coin_amount[0] + '.' + str_coin_amount[1][0:8])
-    print('Will place an order of:')
-    print(f'- Price : {bid_limit_price}')
-    print(f'- Amount: {bid_coin_amount}')
-    time.sleep(1)
-    data = op.place_buy_sell_order(buy=True, coin_pair='BRLBTC', quantity=bid_coin_amount, limit_price=bid_limit_price, wait=True)
-    pprint(data)
+        op = Operations()
+        account_info = op.get_account_info(assets=['brl', 'btc'])
+        time.sleep(1)
+        order_book = op.list_order_book('BRLBTC')
+        balance = account_info['brl']['available']
+        bids_df = pd.DataFrame(order_book['orderbook']['bids'])
+        bids_df = bids_df.astype({'quantity': float, 'limit_price': float})
+        mean_limit_price = bids_df.describe()['limit_price']['mean']
+        min_limit_price = bids_df.describe()['limit_price']['min']
+        coin_amount = float(balance)/mean_limit_price
+
+        str_limit_price = str(min_limit_price).split('.')
+        bid_limit_price = float(str_limit_price[0] + '.' + str_limit_price[1][0:3])
+        str_coin_amount = str(coin_amount).split('.')
+        bid_coin_amount = float(str_coin_amount[0] + '.' + str_coin_amount[1][0:8])
+        print('Will place an order of:')
+        print(f'- Price : {bid_limit_price}')
+        print(f'- Amount: {bid_coin_amount}')
+        time.sleep(1)
+        data = op.place_buy_sell_order(buy=True, coin_pair='BRLBTC', quantity=bid_coin_amount, limit_price=bid_limit_price, wait=True)
+        pprint(data)
 
 The output can be something like this (with the real order id redacted): 
 
