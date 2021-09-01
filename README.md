@@ -14,6 +14,19 @@ This packed is intended to achieve 3 main things:
 
 
 ## Installation
+Right now, since we are still on **beta**, this is still not available on PyPi. That means that if you want to use
+this as a package, you have to create the package. In basically any Linux environment with Python3, do:
+
+    $ git clone git@github.com:minterciso/mercadoBTCUtils.git
+    $ cd mercadoBTCUtils/
+    $ pip install wheel build
+    $ python3 -m build
+
+After this is complete, the file `mercadoBTCUtils-1.0b0.dev0-py3-none-any.whl` will be available on the dist folder:
+
+    $ pip install dist/mercadoBTCUtils-1.0b0.dev0-py3-none-any.whl
+
+Then please create the folder named `log` on your root execution folder, and proceed with the configuration.
 
 ## Configuration
 To configure, you need to create a .ini file with the following parameters:
