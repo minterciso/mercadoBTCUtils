@@ -125,18 +125,25 @@ class Operations:
         ----------
         coin_pair : str, default: BRLBTC
             Retrieve only related the the passed coin pair, you can find the list of valid coin pairs on https://www.mercadobitcoin.com.br/trade-api/#list_orders
+
         order_type: int, optional
             Retrieve only the type of: 1-buy, 2-sell
+
         status_list: list of ints, optional
             Retrieve only orders in the status: 1-pending, 2-open, 3-canceled, 4-filled
+
         has_fills: bool, optional
             Retrieves only orders that has one or more executions
+
         from_id: int, optional
             Retrieves only orders starting from passed id
+
         to_id: int, optional
             Retrieves only orders up until passed id
+
         from_timestamp: int, optional
             Retrieves only orders starting from passed UNIX timestamp
+
         to_timestamp: int, optional
             Retrieves only orders ending from passed UNIX timestamp
 
@@ -221,7 +228,8 @@ class Operations:
         params = {
             'tapi_method': 'list_orderbook',
             'tapi_nonce': self.tapi_nonce,
-            'coin_pair': coin_pair
+            'coin_pair': coin_pair,
+            'full': 'true' if full else 'false'
         }
         response_data = self.__execute_tapi(params=params)
         log.info('Done')
@@ -229,7 +237,7 @@ class Operations:
 
     def place_buy_sell_order(self, buy: bool, coin_pair: str, quantity: float, limit_price: float, wait: bool = True):
         """
-        Create an buy order on the order book, with passed parameters.
+        Create a buy/sell order on the order book, with passed parameters.
 
         Parameters
         ----------
@@ -265,6 +273,40 @@ class Operations:
             'coin_pair': coin_pair,
             'quantity': quantity,
             'limit_price': limit_price,
+            'async': 'true' if wait else 'false'
+        }
+        response_data = self.__execute_tapi(params=params)
+        log.info('Done')
+        return response_data
+
+    def cancel_order(self, coin_pair: str, order_id: int, wait: bool = False):
+        """
+        Cancel an open order on the order book, with passed parameters.
+
+        Parameters
+        ----------
+        coin_pair: str
+            The coin to buy.
+
+        order_id: int
+            The order # to cancel
+
+        wait: bool, default: False
+            If set to True, it'll wait for the return. Since this is a cancel method, we default this to False.
+
+        Returns
+        -------
+        The order that was canceled. You can see more information on https://www.mercadobitcoin.com.br/trade-api/#cancel_order
+        """
+        log.info('Canceling an open order...')
+        log.debug(f'- Coin   : {coin_pair}')
+        log.debug(f'- Order #: {order_id}')
+        log.debug(f'- Wait   : {wait}')
+        params = {
+            'tapi_method': 'cancel_order',
+            'tapi_nonce': self.tapi_nonce,
+            'coin_pair': coin_pair,
+            'order_id': order_id,
             'async': 'true' if wait else 'false'
         }
         response_data = self.__execute_tapi(params=params)
